@@ -1,0 +1,89 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+class SVM:
+    def __init__(self, learning_rate=0.001, lambda_param=0.01, n_iterations=1000):
+        self.learning_rate = learning_rate
+        self.lambda_param = lambda_param
+        self.n_iterations = n_iterations
+        self.weights = None
+        self.bias = None
+    
+    def fit(self, X, y):
+        n_samples, n_features = X.shape
+        
+        # Convert labels to -1 and 1
+        y_ = np.where(y <= 0, -1, 1)
+        self.weights = np.zeros(n_features)
+        self.bias = 0
+        
+        print("Training SVM...")
+        print(f"Learning rate: {self.learning_rate}")
+        print(f"Lambda (regularization): {self.lambda_param}")
+        print(f"Iterations: {self.n_iterations}\n")
+        
+        # Gradient descent
+        for iteration in range(self.n_iterations):
+            for idx, x_i in enumerate(X):
+                condition = y_[idx] * (np.dot(x_i, self.weights) - self.bias) >= 1
+                
+                if condition:
+                    self.weights -= self.learning_rate * (2 * self.lambda_param * self.weights)
+                else:
+                    # Misclassified, update weights and bias
+                    self.weights -= self.learning_rate * (
+                        2 * self.lambda_param * self.weights - np.dot(x_i, y_[idx])
+                    )
+                    self.bias -= self.learning_rate * y_[idx]
+            
+            if iteration % 100 == 0:
+                print(f"Iteration {iteration}: weights = {self.weights}, bias = {self.bias:.4f}")
+        
+        print(f"\nTraining completed!")
+        print(f"Final weights: {self.weights}")
+        print(f"Final bias: {self.bias:.4f}\n")
+    
+    def predict(self, X):
+        linear_output = np.dot(X, self.weights) - self.bias
+        return np.sign(linear_output)
+    
+    def score(self, X, y):
+        y_ = np.where(y <= 0, -1, 1)
+        predictions = self.predict(X)
+        accuracy = np.sum(predictions == y_) / len(y_)
+        return accuracy
+
+# Example: Binary classification
+print("Support Vector Machine (SVM) Implementation")
+print("Example: Binary Classification")
+
+# Create linearly separable data
+np.random.seed(42)
+# Class 0 (label -1)
+X_class0 = np.random.randn(20, 2) + np.array([2, 2])
+y_class0 = np.zeros(20)
+# Class 1 (label 1)
+X_class1 = np.random.randn(20, 2) + np.array([5, 5])
+y_class1 = np.ones(20)
+
+# Combine data
+X_train = np.vstack([X_class0, X_class1])
+y_train = np.hstack([y_class0, y_class1])
+
+# Create and train SVM
+svm = SVM(learning_rate=0.001, lambda_param=0.01, n_iterations=1000)
+svm.fit(X_train, y_train)
+
+# Test predictions
+print("Testing SVM on training data:")
+predictions = svm.predict(X_train)
+y_train_ = np.where(y_train <= 0, -1, 1)
+
+print(f"\nFirst 5 samples:")
+print("Sample | Predicted | Actual")
+print("-" * 35)
+for i in range(5):
+    print(f"{X_train[i]} | {predictions[i]:9.0f} | {y_train_[i]:6.0f}")
+
+accuracy = svm.score(X_train, y_train)
+print(f"\nTraining Accuracy: {accuracy * 100:.2f}%")

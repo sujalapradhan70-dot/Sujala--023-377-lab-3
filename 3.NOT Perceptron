@@ -1,0 +1,65 @@
+import numpy as np
+
+class Perceptron:
+    def __init__(self, learning_rate=0.1, epochs=100):
+        self.learning_rate = learning_rate
+        self.epochs = epochs
+        self.weights = None
+        self.bias = None
+    
+    def activation_function(self, x):
+        return 1 if x >= 0 else 0
+    
+    def predict(self, inputs):
+        if isinstance(inputs, (int, float)):
+            inputs = np.array([inputs])
+        summation = np.dot(inputs, self.weights) + self.bias
+        return self.activation_function(summation)
+    
+    def train(self, X, y):
+        if X.ndim == 1:
+            X = X.reshape(-1, 1)
+        
+        n_features = X.shape[1]
+        self.weights = np.zeros(n_features)
+        self.bias = 0
+        
+        print("Training Perceptron for NOT Gate...")
+        print(f"Initial weights: {self.weights}, bias: {self.bias}\n")
+        
+        for epoch in range(self.epochs):
+            errors = 0
+            for i in range(len(X)):
+                prediction = self.predict(X[i])
+                error = y[i] - prediction
+                
+                if error != 0:
+                    self.weights += self.learning_rate * error * X[i]
+                    self.bias += self.learning_rate * error
+                    errors += 1
+            
+            if epoch % 10 == 0 or errors == 0:
+                print(f"Epoch {epoch}: Weights = {self.weights}, Bias = {self.bias:.2f}, Errors = {errors}")
+            
+            if errors == 0:
+                print(f"\nConverged at epoch {epoch}!")
+                break
+        
+        print(f"\nFinal weights: {self.weights}")
+        print(f"Final bias: {self.bias:.2f}\n")
+
+# NOT Gate Truth Table
+X = np.array([0, 1])  # Input
+y = np.array([1, 0])  # NOT gate outputs
+
+# Create and train perceptron
+perceptron = Perceptron(learning_rate=0.1, epochs=100)
+perceptron.train(X, y)
+
+# Test the perceptron
+print("Testing NOT Gate:")
+print("Input | Output | Expected")
+print("-" * 30)
+for i in range(len(X)):
+    prediction = perceptron.predict(X[i])
+    print(f"{X[i]}     | {prediction}      | {y[i]}")

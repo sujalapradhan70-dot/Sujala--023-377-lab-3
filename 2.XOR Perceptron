@@ -1,0 +1,89 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+class MultiLayerPerceptron:
+    def __init__(self, learning_rate=0.5, epochs=10000):
+        self.learning_rate = learning_rate
+        self.epochs = epochs
+    
+    def sigmoid(self, x):
+        return 1 / (1 + np.exp(-x))
+    
+    def sigmoid_derivative(self, x):
+        return x * (1 - x)
+    
+    def train(self, X, y):
+        n_inputs = X.shape[1]
+        n_hidden = 2  # Hidden layer neurons
+        n_outputs = 1
+        
+        np.random.seed(42)
+        self.weights_input_hidden = np.random.uniform(-1, 1, (n_inputs, n_hidden))
+        self.bias_hidden = np.random.uniform(-1, 1, (1, n_hidden))
+        
+        self.weights_hidden_output = np.random.uniform(-1, 1, (n_hidden, n_outputs))
+        self.bias_output = np.random.uniform(-1, 1, (1, n_outputs))
+        
+        print("Training Multi-Layer Perceptron for XOR Gate...")
+        print("(XOR is not linearly separable, requires hidden layer)\n")
+        
+        errors = []
+        
+        for epoch in range(self.epochs):
+            # Forward propagation
+            hidden_input = np.dot(X, self.weights_input_hidden) + self.bias_hidden
+            hidden_output = self.sigmoid(hidden_input)
+            
+            final_input = np.dot(hidden_output, self.weights_hidden_output) + self.bias_output
+            final_output = self.sigmoid(final_input)
+            
+            # Calculate error
+            error = y.reshape(-1, 1) - final_output
+            mean_squared_error = np.mean(error ** 2)
+            errors.append(mean_squared_error)
+            
+            # Backpropagation
+            output_delta = error * self.sigmoid_derivative(final_output)
+            hidden_error = output_delta.dot(self.weights_hidden_output.T)
+            hidden_delta = hidden_error * self.sigmoid_derivative(hidden_output)
+            
+            # Update weights and biases
+            self.weights_hidden_output += hidden_output.T.dot(output_delta) * self.learning_rate
+            self.bias_output += np.sum(output_delta, axis=0, keepdims=True) * self.learning_rate
+            
+            self.weights_input_hidden += X.T.dot(hidden_delta) * self.learning_rate
+            self.bias_hidden += np.sum(hidden_delta, axis=0, keepdims=True) * self.learning_rate
+            
+            if epoch % 1000 == 0:
+                print(f"Epoch {epoch}: MSE = {mean_squared_error:.6f}")
+        
+        print(f"\nTraining completed!\n")
+        return errors
+    
+    def predict(self, X):
+        hidden_input = np.dot(X, self.weights_input_hidden) + self.bias_hidden
+        hidden_output = self.sigmoid(hidden_input)
+        
+        final_input = np.dot(hidden_output, self.weights_hidden_output) + self.bias_output
+        final_output = self.sigmoid(final_input)
+        
+        return final_output
+
+# XOR Gate Truth Table
+X = np.array([[0, 0],
+              [0, 1],
+              [1, 0],
+              [1, 1]])
+
+y = np.array([0, 1, 1, 0])  # XOR gate outputs
+
+# Create and train multi-layer perceptron
+mlp = MultiLayerPerceptron(learning_rate=0.5, epochs=10000)
+errors = mlp.train(X, y)
+
+print("Testing XOR Gate:")
+print("Input | Output | Expected")
+print("-" * 35)
+for i in range(len(X)):
+    prediction = mlp.predict(X[i].reshape(1, -1))
+    print(f"{X[i]} | {prediction[0][0]:.4f} | {y[i]}")

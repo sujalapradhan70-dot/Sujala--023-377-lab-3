@@ -1,0 +1,87 @@
+import numpy as np
+from collections import Counter
+import matplotlib.pyplot as plt
+
+class KNN:
+    def __init__(self, k=3):
+        self.k = k
+        self.X_train = None
+        self.y_train = None
+    
+    def fit(self, X, y):
+        self.X_train = X
+        self.y_train = y
+        print(f"KNN model trained with k={self.k}")
+        print(f"Training samples: {len(X)}\n")
+    
+    def euclidean_distance(self, x1, x2):
+        return np.sqrt(np.sum((x1 - x2) ** 2))
+    
+    def predict_single(self, x):
+        distances = []
+        for i, x_train in enumerate(self.X_train):
+            distance = self.euclidean_distance(x, x_train)
+            distances.append((distance, self.y_train[i]))
+        
+        # Sort by distance and get k nearest neighbors
+        distances.sort(key=lambda x: x[0])
+        k_nearest = distances[:self.k]
+        
+        # Get labels of k nearest neighbors
+        k_nearest_labels = [label for _, label in k_nearest]
+        
+        # Return most common label
+        most_common = Counter(k_nearest_labels).most_common(1)
+        return most_common[0][0]
+    
+    def predict(self, X):
+        predictions = [self.predict_single(x) for x in X]
+        return np.array(predictions)
+    
+    def score(self, X, y):
+        predictions = self.predict(X)
+        accuracy = np.sum(predictions == y) / len(y)
+        return accuracy
+
+# Example: Classify flowers based on features
+print("k-Nearest Neighbors (kNN) Implementation")
+print("Example: Flower Classification")
+# Training data: [petal_length, petal_width]
+# Class 0: Setosa, Class 1: Versicolor
+X_train = np.array([
+    [1.4, 0.2],  # Setosa
+    [1.3, 0.2],  # Setosa
+    [1.5, 0.2],  # Setosa
+    [1.4, 0.3],  # Setosa
+    [4.7, 1.4],  # Versicolor
+    [4.5, 1.5],  # Versicolor
+    [4.9, 1.5],  # Versicolor
+    [4.0, 1.3],  # Versicolor
+])
+y_train = np.array([0, 0, 0, 0, 1, 1, 1, 1])
+X_test = np.array([
+    [1.5, 0.3],  # Should be Setosa (0)
+    [4.6, 1.4],  # Should be Versicolor (1)
+    [1.2, 0.2],  # Should be Setosa (0)
+    [4.8, 1.6],  # Should be Versicolor (1)
+])
+y_test = np.array([0, 1, 0, 1])
+
+# Create and train KNN model
+knn = KNN(k=3)
+knn.fit(X_train, y_train)
+
+# Make predictions
+print("Making predictions on test data:")
+print("Test Sample | Predicted | Actual | Correct")
+print("-" * 50)
+
+predictions = knn.predict(X_test)
+for i in range(len(X_test)):
+    correct = "✓" if predictions[i] == y_test[i] else "✗"
+    class_name_pred = "Setosa" if predictions[i] == 0 else "Versicolor"
+    class_name_actual = "Setosa" if y_test[i] == 0 else "Versicolor"
+    print(f"{X_test[i]} | {class_name_pred:11} | {class_name_actual:11} | {correct}")
+
+accuracy = knn.score(X_test, y_test)
+print(f"\nAccuracy: {accuracy * 100:.2f}%")
